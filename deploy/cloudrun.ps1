@@ -71,7 +71,9 @@ if ($BillingAccountId) {
   Write-Host '== 5/5 建立每月預算提醒'
   Invoke-Gcloud services enable billingbudgets.googleapis.com
   $displayName = "$Service monthly cap"
-  $existing = & gcloud billing budgets list --billing-account $BillingAccountId --filter "displayName=`"$displayName`"" --format 'value(name)'
+  # 不用 --filter：gcloud 對含空白字串的比對規則正在改，可能比對不到而重複建立
+  $existing = & gcloud billing budgets list --billing-account $BillingAccountId --format 'value(displayName)' |
+    Where-Object { $_ -eq $displayName }
   if ($existing) {
     Write-Host "已有預算「$displayName」，略過"
   } else {
