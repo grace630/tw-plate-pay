@@ -15,7 +15,9 @@ param(
   [string]$Service = 'tw-plate-pay'
 )
 
-$ErrorActionPreference = 'Stop'
+# gcloud 把進度訊息寫到 stderr；PowerShell 5.1 在輸出被導向時會把它當成錯誤，
+# 所以不用 'Stop'，改由 exit code 判斷成敗（throw 仍會中止腳本）
+$ErrorActionPreference = 'Continue'
 
 function Invoke-Gcloud {
   & gcloud @args
@@ -31,6 +33,15 @@ Invoke-Gcloud config set project $ProjectId
 
 Write-Host '== 2/5 啟用需要的 API'
 Invoke-Gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+
+# 新專案的預設 Compute 服務帳戶沒有建置權限，--source 部署會失敗；
+# 只給 Cloud Run 官方建議的最小角色 roles/run.builder
+$projectNumber = & gcloud projects describe $ProjectId --format 'value(projectNumber)'
+Invoke-Gcloud projects add-iam-policy-binding $ProjectId `
+  --member "serviceAccount:$projectNumber-compute@developer.gserviceaccount.com" `
+  --role roles/run.builder `
+  --condition None `
+  --format none
 
 Write-Host "== 3/5 部署到 Cloud Run（$Region）"
 Invoke-Gcloud run deploy $Service `
