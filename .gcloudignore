@@ -1,0 +1,11 @@
+# gcloud run deploy --source 上傳原始碼時排除的檔案（上傳檔越小，Cloud Storage 暫存費越少）
+.gcloudignore
+.git
+.gitignore
+node_modules
+dist
+.claude
+.env
+.env.*
+*.log
+deploy/

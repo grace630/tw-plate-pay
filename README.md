@@ -69,6 +69,44 @@ repo 內已有 [`render.yaml`](render.yaml)：
 - 機房在新加坡；若某些縣市擋國外 IP，那些縣市會顯示查詢失敗
 - `/api/paybill` 每個 IP 每分鐘最多 60 次請求（約 2～3 次完整查詢），超過回 429
 
+> 實測（2026/10）：從 Render 新加坡只能查到 10 個縣市，桃園、新竹市、新竹縣、宜蘭、彰化、南投、雲林、高雄、花蓮、臺東、金門會擋國外 IP。要查全台請用下方的 Cloud Run 台灣機房。
+
+### 部署到 Google Cloud Run 台灣機房（在免費額度內）
+
+需要 Google Cloud 帳號並綁定信用卡。用 [`deploy/cloudrun.ps1`](deploy/cloudrun.ps1) 部署，它會自動套用下列省錢設定。
+
+**事前準備（自己在主控台操作）**
+
+1. 到 [Google Cloud 主控台](https://console.cloud.google.com/) 建立專案，記下**專案 ID**
+2. 到「帳單」記下**帳單帳戶 ID**（格式 `XXXXXX-XXXXXX-XXXXXX`）
+3. 安裝 [Google Cloud CLI](https://cloud.google.com/sdk/docs/install)，執行 `gcloud auth login`
+
+**部署**（PowerShell，在專案根目錄）
+
+```powershell
+.\deploy\cloudrun.ps1 -ProjectId <專案ID> -BillingAccountId <帳單帳戶ID>
+```
+
+之後改了程式要更新，再執行一次同樣的指令即可（預算已存在會自動略過）。
+
+**四層費用防護**
+
+| 層 | 做法 | 在哪裡 |
+|---|---|---|
+| 1. 免費試用 | 新帳號有 US$300 / 90 天試用，期間不收費；試用結束要**自己手動升級**才會開始計費 | Google Cloud 帳號 |
+| 2. 規模上限 | 最多 1 台（`--max-instances 1`）、沒人用時 0 台、依請求計費、1 vCPU / 256 MiB、關閉啟動加速 | `deploy/cloudrun.ps1` |
+| 3. 程式限流 | 每 IP 每分鐘 60 次請求 | `server/rateLimit.ts` |
+| 4. 預算提醒 | 每月 US$1（TWD 帳戶為 NT$30），用到 50% / 90% / 100% 寄信通知。**只通知、不會自動停機** | `deploy/cloudrun.ps1` 建立 |
+
+另外會自動清理容易默默累積費用的儲存空間：
+
+- Artifact Registry 映像檔只保留最近 2 版（免費 0.5 GB，每版約 100 MB）：`deploy/artifact-cleanup-policy.json`
+- 部署時上傳的原始碼暫存檔 1 天後刪除：`deploy/source-bucket-lifecycle.json`
+
+**唯一不在免費額度內的項目**：從台灣機房傳到網際網路的流量（免費額度只有北美）。每 1,000 次查詢約 0.1 GB，約 NT$0.3。
+
+**如果想完全停用**：主控台 → Cloud Run → 刪除 `tw-plate-pay` 服務；或直接關閉整個專案。
+
 ## 縣市 API 注意事項
 
 - **車號必須含「-」**（例如 `ABC-1234`）。多數縣市不帶「-」會回「輸入車牌格式有誤」。
