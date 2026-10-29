@@ -53,6 +53,21 @@ NODE_ENV=production PORT=8080 npm start
 ```
 
 production 模式由同一個 Node 程式提供 `dist/` 靜態檔與 `/api`。
+（Windows PowerShell 請改用 `$env:NODE_ENV="production"; npm start`）
+
+### 部署到 Render（免費）
+
+repo 內已有 [`render.yaml`](render.yaml)：
+
+1. 用 GitHub 帳號登入 [Render](https://render.com)
+2. **New → Blueprint**，選這個 repo，按 **Apply**
+3. 完成後網址為 `https://tw-plate-pay.onrender.com`（名稱被占用時 Render 會加上亂數）
+
+之後 push 到 `main` 就會自動重新部署。
+
+- 免費方案閒置 15 分鐘後會休眠，下次打開需要等 30～60 秒喚醒
+- 機房在新加坡；若某些縣市擋國外 IP，那些縣市會顯示查詢失敗
+- `/api/paybill` 每個 IP 每分鐘最多 60 次請求（約 2～3 次完整查詢），超過回 429
 
 ## 縣市 API 注意事項
 

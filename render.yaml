@@ -1,0 +1,18 @@
+# Render Blueprint：在 Render 選 New → Blueprint → 這個 repo 即可建立服務
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: tw-plate-pay
+    runtime: node
+    region: singapore
+    plan: free
+    # build 需要 devDependencies（vite、typescript），NODE_ENV=production 時 npm ci 預設會略過
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/cities
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"

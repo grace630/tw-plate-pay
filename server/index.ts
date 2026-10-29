@@ -5,9 +5,12 @@ import { CITIES, findCity } from '../shared/cities.ts'
 import { isCarType, isValidPlate, normalizePlate } from '../shared/plate.ts'
 import { DEV_TEST_PLATE, devFixture } from './fixtures.ts'
 import { queryCity } from './paybill.ts'
+import { rateLimit } from './rateLimit.ts'
 
 const isProduction = process.env.NODE_ENV === 'production'
 const app = new Hono()
+
+app.use('/api/paybill/*', rateLimit)
 
 app.get('/api/cities', (c) => c.json(CITIES.map(({ id, name, region, officialUrl }) => ({ id, name, region, officialUrl }))))
 
